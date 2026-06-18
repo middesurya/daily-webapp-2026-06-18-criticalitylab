@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CriticalityLab — Computation at the Edge of Chaos</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a24;
+  --border: rgba(255,255,255,0.08);
+  --text: #e8e8f0;
+  --muted: #7878a0;
+  --order: #3b82f6;
+  --critical: #f59e0b;
+  --chaos: #ef4444;
+  --order-dim: rgba(59,130,246,0.15);
+  --critical-dim: rgba(245,158,11,0.15);
+  --chaos-dim: rgba(239,68,68,0.15);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+.hero{text-align:center;padding:2.5rem 1rem 1.5rem;background:linear-gradient(180deg,#0d0d18 0%,var(--bg) 100%)}
+.hero h1{font-size:2.4rem;font-weight:700;letter-spacing:-0.02em;background:linear-gradient(135deg,#a78bfa,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);font-size:1rem;margin-top:0.4rem}
+.tabs{display:flex;gap:2px;padding:0 1rem;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:0.75rem 1.1rem;font-size:0.82rem;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--critical);border-bottom-color:var(--critical)}
+.panel{display:none;padding:1.2rem}
+.panel.active{display:block}
+.row{display:flex;gap:1rem;flex-wrap:wrap}
+.col{flex:1;min-width:240px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.card h3{font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.75rem}
+canvas{display:block;border-radius:6px}
+label{font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.3rem}
+input[type=range]{width:100%;accent-color:var(--critical);cursor:pointer}
+input[type=number],select{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.35rem 0.5rem;font-size:0.82rem;width:100%}
+button{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.4rem 0.9rem;font-size:0.82rem;cursor:pointer;transition:all 0.15s}
+button:hover{background:var(--bg);border-color:var(--critical);color:var(--critical)}
+button.active-btn{background:var(--critical-dim);border-color:var(--critical);color:var(--critical)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+.badge-order{background:var(--order-dim);color:var(--order)}
+.badge-critical{background:var(--critical-dim);color:var(--critical)}
+.badge-chaos{background:var(--chaos-dim);color:var(--chaos)}
+.badge-complex{background:rgba(167,139,250,0.15);color:#a78bfa}
+.metric-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem}
+.metric{background:var(--bg3);border-radius:6px;padding:0.4rem 0.7rem;font-size:0.78rem}
+.metric span{color:var(--muted);margin-right:4px}
+.stat-bar{height:6px;border-radius:3px;background:var(--bg3);margin-top:4px;overflow:hidden}
+.stat-fill{height:100%;border-radius:3px;transition:width 0.4s}
+.gauge{display:flex;align-items:center;gap:6px;font-size:0.75rem;margin-top:0.5rem}
+.gauge-track{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--order),var(--critical),var(--chaos));position:relative}
+.gauge-thumb{position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--bg);transform:translateX(-50%);transition:left 0.4s}
+.section-title{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem}
+.bit-row{display:flex;gap:3px;margin-top:0.5rem}
+.bit{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;transition:all 0.15s;font-family:monospace}
+.bit.on{background:var(--critical-dim);border-color:var(--critical);color:var(--critical)}
+.bit.off{background:var(--bg3);color:var(--muted)}
+.rule-label{font-size:0.62rem;color:var(--muted);text-align:center;margin-top:2px}
+.preset-btns{display:flex;gap:4px;flex-wrap:wrap;margin-top:0.5rem}
+.preset-btns button{padding:0.25rem 0.6rem;font-size:0.75rem}
+footer{text-align:center;padding:1.5rem;color:var(--muted);font-size:0.75rem;border-top:1px solid var(--border);margin-top:2rem}
+footer a{color:var(--muted);text-decoration:none}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+.loss-canvas{background:var(--bg3);border-radius:6px}
+#nca-controls button{margin-bottom:4px}
+.verdict{padding:0.75rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:500;margin-top:0.75rem}
+.verdict.order{background:var(--order-dim);border:1px solid var(--order);color:var(--order)}
+.verdict.critical{background:var(--critical-dim);border:1px solid var(--critical);color:var(--critical)}
+.verdict.chaos{background:var(--chaos-dim);border:1px solid var(--chaos);color:var(--chaos)}
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>CriticalityLab</h1>
+  <p>Interactive Laboratory for Computation at the Edge of Chaos</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">⚡ Wolfram Universe</div>
+  <div class="tab" onclick="showTab(1)">λ Phase Transition</div>
+  <div class="tab" onclick="showTab(2)">🧠 Reservoir CA</div>
+  <div class="tab" onclick="showTab(3)">🌊 Lenia Explorer</div>
+  <div class="tab" onclick="showTab(4)">🔬 Neural CA</div>
+  <div class="tab" onclick="showTab(5)">📊 Criticality Dashboard</div>
+</div>
+
+<!-- MODULE 1: WOLFRAM UNIVERSE -->
+<div class="panel active" id="panel0">
+  <div class="row">
+    <div class="col" style="max-width:300px">
+      <div class="card">
+        <h3>Rule Controls</h3>
+        <label>Rule Number: <b id="rule-num-display">110</b></label>
+        <input type="range" id="rule-slider" min="0" max="255" value="110" oninput="setRule(+this.value)">
+        <div class="bit-row" id="rule-bits"></div>
+        <div style="display:flex;gap:3px;margin-top:2px" id="rule-bit-labels"></div>
+        <div style="margin-top:0.75rem">
+          <label>Initial Condition</label>
+          <select id="eca-init" onchange="runECA()">
+            <option value="center">Single center cell</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+        <div style="margin-top:0.5rem">
+          <label>Width: <b id="eca-w-disp">200</b></label>
+          <input type="range" id="eca-width" min="50" max="400" value="200" oninput="document.getElementById('eca-w-disp').textContent=this.value;runECA()">
+        </div>
+        <div style="margin-top:0.5rem">
+          <label>Steps: <b id="eca-s-disp">200</b></label>
+          <input type="range" id="eca-steps" min="50" max="400" value="200" oninput="document.getElementById('eca-s-disp').textContent=this.value;runECA()">
+        </div>
+        <div class="preset-btns">
+          <div class="section-title" style="width:100%;margin-top:0.5rem">Presets</div>
+          <button onclick="setRule(0)">0 (I)</button>
+          <button onclick="setRule(4)">4 (II)</button>
+          <button onclick="setRule(30)">30 (III)</button>
+          <button onclick="setRule(110)">110 (IV)</button>
+          <button onclick="setRule(54)">54 (IV)</button>
+          <button onclick="setRule(45)">45 (III)</button>
+          <button onclick="setRule(90)">90 (III)</button>
+          <button onclick="setRule(18)">18 (III)</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0.75rem">
+        <h3>Classification</h3>
+        <div id="eca-class-badge"></div>
+        <div class="metric-row" id="eca-metrics"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Space-Time Diagram</h3>
+        <canvas id="eca-canvas" width="560" height="400" style="width:100%;max-width:560px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 2: LAMBDA PHASE TRANSITION -->
+<div class="panel" id="panel1">
+  <div class="row">
+    <div class="col" style="max-width:280px">
+      <div class="card">
+        <h3>Lambda Sweep</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem">λ = fraction of non-quiescent entries in a random CA rule table. Sweep from order to chaos.</p>
+        <button onclick="runLambdaSweep()" style="width:100%">Run Full Sweep</button>
+        <div style="margin-top:0.75rem">
+          <label>Selected λ: <b id="lambda-sel-disp">0.25</b></label>
+          <input type="range" id="lambda-sel" min="0" max="100" value="25" oninput="selectLambda(this.value/100)">
+        </div>
+        <div id="lambda-phase-badge" style="margin-top:0.5rem"></div>
+        <div class="metric-row" id="lambda-metrics" style="margin-top:0.5rem"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="margin-bottom:0.75rem">
+        <h3>Metrics vs λ</h3>
+        <canvas id="lambda-chart" width="500" height="200" style="width:100%;max-width:500px"></canvas>
+      </div>
+      <div class="card">
+        <h3>CA Evolution at Selected λ</h3>
+        <canvas id="lambda-ca-canvas" width="500" height="180" style="width:100%;max-width:500px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 3: RESERVOIR AUTOMATON -->
+<div class="panel" id="panel2">
+  <div class="row">
+    <div class="col" style="max-width:280px">
+      <div class="card">
+        <h3>Reservoir Settings</h3>
+        <label>Task</label>
+        <select id="rc-task" onchange="runReservoir()">
+          <option value="parity">5-bit Parity</option>
+          <option value="xor">Temporal XOR (delay=5)</option>
+          <option value="narma">NARMA-5</option>
+        </select>
+        <div style="margin-top:0.75rem">
+          <label>Rule Number: <b id="rc-rule-disp">110</b></label>
+          <input type="range" id="rc-rule" min="0" max="255" value="110" oninput="document.getElementById('rc-rule-disp').textContent=this.value;runReservoir()">
+        </div>
+        <div style="margin-top:0.5rem">
+          <label>Reservoir Width: <b id="rc-w-disp">50</b></label>
+          <input type="range" id="rc-width" min="20" max="100" value="50" oninput="document.getElementById('rc-w-disp').textContent=this.value;runReservoir()">
+        </div>
+        <div style="margin-top:0.75rem">
+          <div class="section-title">Rule Comparison</div>
+          <div class="preset-btns">
+            <button onclick="document.getElementById('rc-rule').value=110;document.getElementById('rc-rule-disp').textContent=110;runReservoir()">110 (IV)</button>
+            <button onclick="document.getElementById('rc-rule').value=30;document.getElementById('rc-rule-disp').textContent=30;runReservoir()">30 (III)</button>
+            <button onclick="document.getElementById('rc-rule').value=0;document.getElementById('rc-rule-disp').textContent=0;runReservoir()">0 (I)</button>
+            <button onclick="document.getElementById('rc-rule').value=4;document.getElementById('rc-rule-disp').textContent=4;runReservoir()">4 (II)</button>
+          </div>
+        </div>
+        <div class="metric-row" id="rc-metrics" style="margin-top:0.75rem"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="margin-bottom:0.75rem">
+        <h3>CA State Evolution (Input injected at left boundary)</h3>
+        <canvas id="rc-ca-canvas" width="500" height="150" style="width:100%;max-width:500px"></canvas>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem">
+        <h3>Output vs Target</h3>
+        <canvas id="rc-output-canvas" width="500" height="150" style="width:100%;max-width:500px"></canvas>
+      </div>
+      <div class="card">
+        <h3>Accuracy vs Rule (sampled)</h3>
+        <canvas id="rc-heatmap" width="500" height="80" style="width:100%;max-width:500px"></canvas>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">Each column = one rule (0-255). Brightness = accuracy. Edge-of-chaos rules (IV) shine brightest.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 4: LENIA -->
+<div class="panel" id="panel3">
+  <div class="row">
+    <div class="col" style="max-width:280px">
+      <div class="card">
+        <h3>Lenia Parameters</h3>
+        <label>Kernel Radius R: <b id="len-R-disp">13</b></label>
+        <input type="range" id="len-R" min="3" max="20" value="13" oninput="document.getElementById('len-R-disp').textContent=this.value;leniaReset()">
+        <label style="margin-top:0.5rem">Growth center μ: <b id="len-mu-disp">0.15</b></label>
+        <input type="range" id="len-mu" min="1" max="100" value="15" oninput="document.getElementById('len-mu-disp').textContent=(this.value/100).toFixed(2);leniaParamChanged()">
+        <label style="margin-top:0.5rem">Growth width σ: <b id="len-sigma-disp">0.015</b></label>
+        <input type="range" id="len-sigma" min="1" max="50" value="15" oninput="document.getElementById('len-sigma-disp').textContent=(this.value/1000).toFixed(3);leniaParamChanged()">
+        <label style="margin-top:0.5rem">Time step dt: <b id="len-dt-disp">0.10</b></label>
+        <input type="range" id="len-dt" min="1" max="50" value="10" oninput="document.getElementById('len-dt-disp').textContent=(this.value/100).toFixed(2);leniaParamChanged()">
+        <label style="margin-top:0.5rem">Speed</label>
+        <input type="range" id="len-speed" min="1" max="20" value="5">
+        <div style="margin-top:0.75rem;display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="leniaToggle()" id="len-play-btn">Pause</button>
+          <button onclick="leniaStep()">Step</button>
+          <button onclick="leniaReset()">Reset</button>
+        </div>
+        <div class="section-title" style="margin-top:0.75rem">Presets</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="leniaPreset('orbium')">Orbium</button>
+          <button onclick="leniaPreset('geminium')">Geminium</button>
+          <button onclick="leniaPreset('scutium')">Scutium</button>
+          <button onclick="leniaPreset('custom')">Random</button>
+        </div>
+        <div class="metric-row" id="lenia-stats" style="margin-top:0.75rem"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Lenia Field (click to add seed)</h3>
+        <canvas id="lenia-canvas" width="512" height="512" style="width:100%;max-width:512px;cursor:crosshair"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 5: NEURAL CA -->
+<div class="panel" id="panel4">
+  <div class="row">
+    <div class="col" style="max-width:280px">
+      <div class="card" id="nca-controls">
+        <h3>Neural CA Training</h3>
+        <label>Target Pattern</label>
+        <select id="nca-target" onchange="ncaSetTarget()">
+          <option value="circle">Circle</option>
+          <option value="square">Square</option>
+          <option value="star">Star</option>
+          <option value="heart">Heart</option>
+        </select>
+        <div style="margin-top:0.75rem">
+          <label>Learning Rate: <b id="nca-lr-disp">0.001</b></label>
+          <input type="range" id="nca-lr" min="1" max="100" value="10" oninput="document.getElementById('nca-lr-disp').textContent=(this.value/10000).toFixed(4)">
+        </div>
+        <div style="margin-top:0.5rem;display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="ncaTrain()" id="nca-train-btn">Train</button>
+          <button onclick="ncaStop()">Stop</button>
+          <button onclick="ncaDamage()">Damage!</button>
+          <button onclick="ncaReset()">Reset</button>
+        </div>
+        <div class="metric-row" id="nca-metrics" style="margin-top:0.75rem"></div>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:0.75rem">A small CNN (3×3 conv → ReLU → 1×1 conv) applied per-cell. Trained to grow the target pattern from a single seed cell via backprop.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="two-col">
+        <div class="card">
+          <h3>Target Pattern</h3>
+          <canvas id="nca-target-canvas" width="128" height="128" style="width:100%;max-width:128px"></canvas>
+        </div>
+        <div class="card">
+          <h3>CA State</h3>
+          <canvas id="nca-state-canvas" width="128" height="128" style="width:100%;max-width:128px"></canvas>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0.75rem">
+        <h3>Loss Curve</h3>
+        <canvas id="nca-loss-canvas" width="480" height="150" class="loss-canvas" style="width:100%;max-width:480px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 6: CRITICALITY DASHBOARD -->
+<div class="panel" id="panel5">
+  <div class="row">
+    <div class="col" style="max-width:280px">
+      <div class="card">
+        <h3>System Selection</h3>
+        <label>Source</label>
+        <select id="crit-source" onchange="critAnalyze()">
+          <option value="rule110">CA Rule 110 (Class IV)</option>
+          <option value="rule30">CA Rule 30 (Class III)</option>
+          <option value="rule4">CA Rule 4 (Class II)</option>
+          <option value="rule0">CA Rule 0 (Class I)</option>
+          <option value="rule90">CA Rule 90 (XOR)</option>
+          <option value="random">Pure Random</option>
+          <option value="ordered">Fully Ordered</option>
+        </select>
+        <button onclick="critAnalyze()" style="width:100%;margin-top:0.5rem">Analyze</button>
+        <div id="crit-verdict" class="verdict" style="margin-top:0.75rem">Select a system to analyze.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="two-col">
+        <div class="card">
+          <h3>Lyapunov Exponent</h3>
+          <canvas id="crit-lyap-canvas" width="220" height="100" style="width:100%"></canvas>
+          <div class="gauge"><span style="color:var(--order)">Ord</span><div class="gauge-track"><div class="gauge-thumb" id="lyap-thumb"></div></div><span style="color:var(--chaos)">Cha</span></div>
+          <div id="lyap-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+        <div class="card">
+          <h3>Shannon Entropy Rate</h3>
+          <canvas id="crit-ent-canvas" width="220" height="100" style="width:100%"></canvas>
+          <div class="gauge"><span style="color:var(--order)">Ord</span><div class="gauge-track"><div class="gauge-thumb" id="ent-thumb"></div></div><span style="color:var(--chaos)">Cha</span></div>
+          <div id="ent-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+        <div class="card">
+          <h3>Mutual Information</h3>
+          <canvas id="crit-mi-canvas" width="220" height="100" style="width:100%"></canvas>
+          <div class="gauge"><span style="color:var(--order)">Low</span><div class="gauge-track"><div class="gauge-thumb" id="mi-thumb"></div></div><span style="color:var(--chaos)">Low</span></div>
+          <div id="mi-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+        <div class="card">
+          <h3>Avalanche Distribution</h3>
+          <canvas id="crit-aval-canvas" width="220" height="100" style="width:100%"></canvas>
+          <div id="aval-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <h3>DFA Scaling Exponent (α)</h3>
+          <canvas id="crit-dfa-canvas" width="460" height="100" style="width:100%"></canvas>
+          <div id="dfa-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>CriticalityLab &mdash; MIT License &mdash; <a href="#">GitHub</a> &mdash; Built on complexity science: Wolfram (1984), Langton (1990), Maass (2002), Chan (2019), Mordvintsev (2020)</p>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+// UTILITY
+// ─────────────────────────────────────────────
+function showTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',i===j));
+  if(i===1&&!lambdaSwept)runLambdaSweep();
+  if(i===2&&!rcRan)runReservoir();
+  if(i===3&&!leniaRunning)leniaStart();
+  if(i===4)ncaInit();
+  if(i===5)critAnalyze();
+}
+
+function shannonEntropy(arr){
+  const n=arr.length;
+  const freq={};
+  for(let v of arr)freq[v]=(freq[v]||0)+1;
+  let h=0;
+  for(let k in freq){const p=freq[k]/n;if(p>0)h-=p*Math.log2(p);}
+  return h;
+}
+
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function heatmapColor(t){
+  // black -> blue -> cyan -> green -> yellow -> red -> white
+  const stops=[[0,0,0],[0,0,255],[0,255,255],[0,255,0],[255,255,0],[255,0,0],[255,255,255]];
+  t=clamp(t,0,1)*( stops.length-1);
+  const i=Math.floor(t),f=t-i;
+  const a=stops[Math.min(i,stops.length-1)],b=stops[Math.min(i+1,stops.length-1)];
+  return[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];
+}
+
+// ─────────────────────────────────────────────
+// MODULE 1: ECA
+// ─────────────────────────────────────────────
+let currentRule=110;
+
+function buildRuleBits(){
+  const bitsDiv=document.getElementById('rule-bits');
+  const labDiv=document.getElementById('rule-bit-labels');
+  bitsDiv.innerHTML='';labDiv.innerHTML='';
+  for(let i=7;i>=0;i--){
+    const b=document.createElement('div');
+    b.className='bit '+(((currentRule>>i)&1)?'on':'off');
+    b.textContent=(currentRule>>i)&1;
+    b.onclick=()=>{currentRule^=(1<<i);setRule(currentRule);};
+    bitsDiv.appendChild(b);
+    // label: show neighborhood pattern
+    const patterns=['111','110','101','100','011','010','001','000'];
+    const l=document.createElement('div');
+    l.style.cssText='font-size:0.55rem;color:var(--muted);text-align:center;width:28px';
+    l.textContent=patterns[7-i];
+    labDiv.appendChild(l);
+  }
+}
+
+function setRule(r){
+  currentRule=r&255;
+  document.getElementById('rule-slider').value=currentRule;
+  document.getElementById('rule-num-display').textContent=currentRule;
+  buildRuleBits();
+  runECA();
+}
+
+function classifyRule(rule,grid,steps){
+  // Heuristic classification based on entropy and activity
+  const lastRow=grid.slice((steps-1)*200,steps*200);
+  const h=shannonEntropy(lastRow);
+  const density=lastRow.reduce((a,v)=>a+v,0)/lastRow.length;
+  // Also check middle rows for periodicity
+  const r1=Array.from(grid.slice(Math.floor(steps*0.7)*200,Math.floor(steps*0.7)*200+200));
+  const r2=Array.from(grid.slice(Math.floor(steps*0.9)*200,Math.floor(steps*0.9)*200+200));
+  let same=0;for(let i=0;i<r1.length;i++)if(r1[i]===r2[i])same++;
+  const stability=same/r1.length;
+
+  // Known class IV rules
+  const classIV=[110,54,137,193,41,106,73,57,1];
+  if(classIV.includes(rule))return 4;
+  if(density<0.02||density>0.98)return 1;
+  if(stability>0.92&&h<0.5)return 1;
+  if(stability>0.75&&h<0.85)return 2;
+  if(h>0.9)return 3;
+  return 4;
+}
+
+function runECA(){
+  const W=+document.getElementById('eca-width').value;
+  const S=+document.getElementById('eca-steps').value;
+  const init=document.getElementById('eca-init').value;
+  const rule=currentRule;
+
+  const grid=new Uint8Array(W*S);
+  // Init
+  if(init==='center'){grid[Math.floor(W/2)]=1;}
+  else{for(let i=0;i<W;i++)grid[i]=Math.random()<0.5?1:0;}
+
+  for(let t=1;t<S;t++){
+    const off=(t-1)*W;
+    const noff=t*W;
+    for(let x=0;x<W;x++){
+      const l=grid[off+(x-1+W)%W],c=grid[off+x],r=grid[off+(x+1)%W];
+      const idx=(l<<2)|(c<<1)|r;
+      grid[noff+x]=(rule>>idx)&1;
+    }
+  }
+
+  // Draw
+  const canvas=document.getElementById('eca-canvas');
+  const cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const cellW=cw/W,cellH=ch/S;
+
+  for(let t=0;t<S;t++){
+    for(let x=0;x<W;x++){
+      const v=grid[t*W+x];
+      const px=Math.floor(x*cellW),py=Math.floor(t*cellH);
+      const pw=Math.ceil(cellW),ph=Math.ceil(cellH);
+      for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+        const idx=4*((py+dy)*cw+(px+dx));
+        img.data[idx]=v?245:15;
+        img.data[idx+1]=v?245:15;
+        img.data[idx+2]=v?200:18;
+        img.data[idx+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+
+  // Metrics
+  const allCells=Array.from(grid);
+  const h=shannonEntropy(allCells);
+  // Compression ratio approximation via run-length
+  let runs=1;for(let i=1;i<allCells.length;i++)if(allCells[i]!==allCells[i-1])runs++;
+  const rl=runs/allCells.length;
+  const wclass=classifyRule(rule,grid,S);
+  const classNames=['','Uniform/Fixed','Periodic','Chaotic','Complex (Edge of Chaos)'];
+  const classBadge=['','badge-order','badge-order badge-complex','badge-chaos','badge-complex'];
+  document.getElementById('eca-class-badge').innerHTML=
+    `<span class="badge ${classBadge[wclass]}">Class ${['','I','II','III','IV'][wclass]}: ${classNames[wclass]}</span>`;
+  document.getElementById('eca-metrics').innerHTML=
+    `<div class="metric"><span>Entropy</span>${h.toFixed(3)} bits</div>
+     <div class="metric"><span>Run-length ratio</span>${rl.toFixed(3)}</div>
+     <div class="metric"><span>Active cells</span>${(allCells.reduce((a,v)=>a+v,0)/allCells.length*100).toFixed(1)}%</div>`;
+}
+
+buildRuleBits();
+runECA();
+
+// ─────────────────────────────────────────────
+// MODULE 2: LAMBDA PHASE TRANSITION
+// ─────────────────────────────────────────────
+let lambdaSwept=false;
+let lambdaData=[];
+let lambdaRules=[];
+
+function generateLambdaRule(lambda,k=2,r=1){
+  const n=Math.pow(k,2*r+1);// 8 entries for k=2,r=1
+  const q=0;// quiescent state
+  const rule=new Uint8Array(n);
+  for(let i=0;i<n;i++){
+    rule[i]=(Math.random()<lambda)?1:0;
+  }
+  return rule;
+}
+
+function evolveWithRule(ruleArr,W,S){
+  const grid=new Uint8Array(W*S);
+  for(let i=0;i<W;i++)grid[i]=Math.random()<0.5?1:0;
+  for(let t=1;t<S;t++){
+    const off=(t-1)*W,noff=t*W;
+    for(let x=0;x<W;x++){
+      const l=grid[off+(x-1+W)%W],c=grid[off+x],r2=grid[off+(x+1)%W];
+      const idx=(l<<2)|(c<<1)|r2;
+      grid[noff+x]=ruleArr[idx];
+    }
+  }
+  return grid;
+}
+
+function mutualInformation(grid,W,S,d){
+  // MI between cell 0 and cell d at each timestep
+  const co={};
+  for(let t=0;t<S;t++){
+    const a=grid[t*W+0],b=grid[t*W+d];
+    const k=a+','+b;co[k]=(co[k]||0)+1;
+  }
+  const pa={},pb={};
+  for(let k in co){const[a,b]=k.split(',');pa[a]=(pa[a]||0)+co[k];pb[b]=(pb[b]||0)+co[k];}
+  let mi=0;
+  for(let k in co){
+    const[a,b]=k.split(',');
+    const p=co[k]/S,pA=pa[a]/S,pB=pb[b]/S;
+    if(p>0&&pA>0&&pB>0)mi+=p*Math.log2(p/(pA*pB));
+  }
+  return Math.max(0,mi);
+}
+
+function runLambdaSweep(){
+  const steps=25;// lambda values to test
+  lambdaData=[];lambdaRules=[];
+  const W=100,S=100;
+  for(let li=0;li<=steps;li++){
+    const lam=li/steps;
+    let entSum=0,miSum=0;
+    const trials=3;
+    let bestRule=null;
+    for(let tr=0;tr<trials;tr++){
+      const rule=generateLambdaRule(lam);
+      const grid=evolveWithRule(rule,W,S);
+      const lastHalf=Array.from(grid.slice(S/2*W));
+      entSum+=shannonEntropy(lastHalf);
+      miSum+=mutualInformation(grid,W,S,Math.floor(W/4));
+      if(tr===0)bestRule=rule;
+    }
+    lambdaData.push({lam,ent:entSum/trials,mi:miSum/trials});
+    lambdaRules.push(bestRule);
+  }
+  lambdaSwept=true;
+  drawLambdaChart();
+  selectLambda(0.25);
+}
+
+function drawLambdaChart(){
+  const canvas=document.getElementById('lambda-chart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#12121a';ctx.fillRect(0,0,W,H);
+
+  const pad=30;
+  const maxEnt=Math.max(...lambdaData.map(d=>d.ent));
+  const maxMI=Math.max(...lambdaData.map(d=>d.mi));
+
+  // Draw phase regions
+  const critL=0.2,critH=0.45;
+  ctx.fillStyle='rgba(245,158,11,0.08)';
+  ctx.fillRect(pad+(critL*(W-2*pad)),0,((critH-critL)*(W-2*pad)),H);
+
+  // Labels
+  ctx.font='10px sans-serif';
+  ctx.fillStyle='#3b82f6';ctx.fillText('ORDER',pad+5,15);
+  ctx.fillStyle='#f59e0b';ctx.fillText('CRITICAL',pad+(critL*(W-2*pad))+5,15);
+  ctx.fillStyle='#ef4444';ctx.fillText('CHAOS',pad+(critH*(W-2*pad))+5,15);
+
+  function toX(lam){return pad+lam*(W-2*pad);}
+  function toYent(v){return H-pad-(v/maxEnt)*(H-2*pad);}
+  function toYmi(v){return H-pad-(v/maxMI)*(H-2*pad);}
+
+  // Axes
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,pad);ctx.lineTo(pad,H-pad);ctx.lineTo(W-pad,H-pad);ctx.stroke();
+
+  // Entropy curve
+  ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;
+  ctx.beginPath();
+  lambdaData.forEach((d,i)=>{
+    i===0?ctx.moveTo(toX(d.lam),toYent(d.ent)):ctx.lineTo(toX(d.lam),toYent(d.ent));
+  });
+  ctx.stroke();
+
+  // MI curve
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;
+  ctx.beginPath();
+  lambdaData.forEach((d,i)=>{
+    i===0?ctx.moveTo(toX(d.lam),toYmi(d.mi)):ctx.lineTo(toX(d.lam),toYmi(d.mi));
+  });
+  ctx.stroke();
+
+  // Legend
+  ctx.font='10px sans-serif';
+  ctx.fillStyle='#a78bfa';ctx.fillText('Entropy',W-80,20);
+  ctx.fillStyle='#f59e0b';ctx.fillText('Mutual Info',W-80,32);
+
+  // x-axis labels
+  ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px sans-serif';
+  for(let lam=0;lam<=1;lam+=0.25){
+    ctx.fillText(lam.toFixed(2),toX(lam)-8,H-pad+12);
+  }
+  ctx.fillText('λ',W/2,H-4);
+}
+
+function selectLambda(lam){
+  document.getElementById('lambda-sel').value=Math.round(lam*100);
+  document.getElementById('lambda-sel-disp').textContent=lam.toFixed(2);
+  const phase=lam<0.2?'ORDER':lam<0.45?'CRITICAL':'CHAOS';
+  const colors={'ORDER':'badge-order','CRITICAL':'badge-critical','CHAOS':'badge-chaos'};
+  document.getElementById('lambda-phase-badge').innerHTML=
+    `<span class="badge ${colors[phase]}">${phase} PHASE</span>`;
+
+  if(!lambdaSwept){runLambdaSweep();return;}
+
+  const idx=Math.round(lam*25);
+  const d=lambdaData[clamp(idx,0,lambdaData.length-1)];
+  document.getElementById('lambda-metrics').innerHTML=
+    `<div class="metric"><span>Entropy</span>${d.ent.toFixed(3)}</div>
+     <div class="metric"><span>Mut. Info</span>${d.mi.toFixed(3)}</div>`;
+
+  // Draw CA for this lambda
+  const rule=lambdaRules[clamp(idx,0,lambdaRules.length-1)];
+  const W=250,S=90;
+  const grid=evolveWithRule(rule,W,S);
+  const canvas=document.getElementById('lambda-ca-canvas');
+  const cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const cW=cw/W,cH=ch/S;
+  for(let t=0;t<S;t++){
+    for(let x=0;x<W;x++){
+      const v=grid[t*W+x];
+      const px=Math.floor(x*cW),py=Math.floor(t*cH);
+      const pw=Math.max(1,Math.ceil(cW)),ph=Math.max(1,Math.ceil(cH));
+      for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+        const i=4*((py+dy)*cw+(px+dx));
+        if(i+3<img.data.length){
+          img.data[i]=v?245:15;img.data[i+1]=v?245:15;img.data[i+2]=v?200:18;img.data[i+3]=255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+
+  // Mark lambda on chart
+  drawLambdaChart();
+  const chartCanvas=document.getElementById('lambda-chart');
+  const cCtx=chartCanvas.getContext('2d');
+  const cH2=chartCanvas.height,cW2=chartCanvas.width,pad=30;
+  const x=pad+lam*(cW2-2*pad);
+  cCtx.strokeStyle='rgba(255,255,255,0.6)';cCtx.lineWidth=1.5;cCtx.setLineDash([3,3]);
+  cCtx.beginPath();cCtx.moveTo(x,pad);cCtx.lineTo(x,cH2-pad);cCtx.stroke();
+  cCtx.setLineDash([]);
+}
+
+// ─────────────────────────────────────────────
+// MODULE 3: RESERVOIR COMPUTING
+// ─────────────────────────────────────────────
+let rcRan=false;
+
+function pseudoInverse(A,b){
+  // Solve normal equations: (A^T A) w = A^T b using direct solve
+  const m=A.length,n=A[0].length;
+  // ATA
+  const ATA=[];for(let i=0;i<n;i++){ATA[i]=new Float64Array(n);}
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)for(let k=0;k<m;k++)ATA[i][j]+=A[k][i]*A[k][j];
+  // Add ridge regularization
+  for(let i=0;i<n;i++)ATA[i][i]+=1e-6;
+  // ATb
+  const ATb=new Float64Array(n);
+  for(let i=0;i<n;i++)for(let k=0;k<m;k++)ATb[i]+=A[k][i]*b[k];
+  // Gaussian elimination
+  const M=ATA.map((r,i)=>{const row=Array.from(r);row.push(ATb[i]);return row;});
+  for(let col=0;col<n;col++){
+    let maxRow=col;
+    for(let row=col+1;row<n;row++)if(Math.abs(M[row][col])>Math.abs(M[maxRow][col]))maxRow=row;
+    [M[col],M[maxRow]]=[M[maxRow],M[col]];
+    if(Math.abs(M[col][col])<1e-12)continue;
+    for(let row=col+1;row<n;row++){
+      const f=M[row][col]/M[col][col];
+      for(let k=col;k<=n;k++)M[row][k]-=f*M[col][k];
+    }
+  }
+  const x=new Float64Array(n);
+  for(let i=n-1;i>=0;i--){
+    x[i]=M[i][n];
+    for(let j=i+1;j<n;j++)x[i]-=M[i][j]*x[j];
+    x[i]/=M[i][i]||1e-12;
+  }
+  return x;
+}
+
+function generateTask(taskName,T){
+  const inputs=new Float64Array(T);
+  const targets=new Float64Array(T);
+  for(let t=0;t<T;t++)inputs[t]=Math.random()<0.5?1:0;
+  if(taskName==='parity'){
+    for(let t=4;t<T;t++){
+      targets[t]=(inputs[t]^inputs[t-1]^inputs[t-2]^inputs[t-3]^inputs[t-4]);
+    }
+  } else if(taskName==='xor'){
+    for(let t=5;t<T;t++)targets[t]=inputs[t]^inputs[t-5];
+  } else { // narma-5
+    for(let t=5;t<T;t++){
+      targets[t]=0.3*targets[t-1]+0.05*targets[t-1]*inputs[t]+1.5*inputs[t-4]*inputs[t-5]+0.1;
+      targets[t]=clamp(targets[t],0,1);
+    }
+  }
+  return{inputs,targets};
+}
+
+function runReservoirWithRule(rule,W,T,inputs){
+  const grid=new Uint8Array(W*T);
+  // Init
+  for(let x=0;x<W;x++)grid[x]=0;
+  for(let t=1;t<T;t++){
+    const off=(t-1)*W,noff=t*W;
+    // Inject input at left boundary
+    grid[noff+0]=inputs[t-1]>0.5?1:0;
+    for(let x=1;x<W-1;x++){
+      const l=grid[off+(x-1)],c=grid[off+x],r=grid[off+x+1];
+      const idx=(l<<2)|(c<<1)|r;
+      grid[noff+x]=(rule>>idx)&1;
+    }
+    grid[noff+W-1]=grid[off+W-1];
+  }
+  return grid;
+}
+
+function runReservoir(){
+  rcRan=true;
+  const taskName=document.getElementById('rc-task').value;
+  const rule=+document.getElementById('rc-rule').value;
+  const W=+document.getElementById('rc-width').value;
+  const T=300;
+  const warmup=50;
+
+  const{inputs,targets}=generateTask(taskName,T);
+  const grid=runReservoirWithRule(rule,W,T,inputs);
+
+  // Build readout matrix: each row = state at time t
+  const trainLen=T-warmup;
+  const A=[];const b=[];
+  for(let t=warmup;t<T;t++){
+    const row=Array.from(grid.slice(t*W,(t+1)*W)).map(v=>v);
+    row.push(1);// bias
+    A.push(row);
+    b.push(targets[t]);
+  }
+
+  const w=pseudoInverse(A,b);
+
+  // Compute predictions
+  const preds=new Float64Array(T);
+  for(let t=warmup;t<T;t++){
+    let s=0;
+    for(let x=0;x<W;x++)s+=grid[t*W+x]*w[x];
+    s+=w[W];
+    preds[t]=clamp(taskName==='narma'?s:s>0.5?1:0,0,1);
+  }
+
+  // Accuracy
+  let correct=0,total=0;
+  for(let t=warmup;t<T;t++){
+    if(taskName==='narma'){
+      correct+=Math.abs(preds[t]-targets[t]);total++;
+    } else {
+      if(Math.round(preds[t])===Math.round(targets[t]))correct++;
+      total++;
+    }
+  }
+  const accuracy=taskName==='narma'?1-correct/total:correct/total;
+
+  document.getElementById('rc-metrics').innerHTML=
+    `<div class="metric"><span>Accuracy</span>${(accuracy*100).toFixed(1)}%</div>
+     <div class="metric"><span>Rule Class</span>${['I','II','III','IV'][classifyRule(rule,grid.slice(0,W*100),100)-1]}</div>`;
+
+  // Draw CA
+  drawRCCanvas(grid,W,Math.min(T,150),inputs);
+
+  // Draw output vs target
+  drawRCOutput(preds,targets,T,warmup,taskName);
+
+  // Draw accuracy heatmap (sample 32 rules)
+  drawRCHeatmap(taskName,W,T,warmup,inputs,targets);
+}
+
+function drawRCCanvas(grid,W,S,inputs){
+  const canvas=document.getElementById('rc-ca-canvas');
+  const cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const cellW=cw/W,cellH=ch/S;
+  for(let t=0;t<S;t++){
+    for(let x=0;x<W;x++){
+      const v=grid[t*W+x];
+      const inp=(x===0)?inputs[t]:0;
+      const px=Math.floor(x*cellW),py=Math.floor(t*cellH);
+      const pw=Math.max(1,Math.ceil(cellW)),ph=Math.max(1,Math.ceil(cellH));
+      for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+        const i=4*((py+dy)*cw+(px+dx));
+        if(i+3>=img.data.length)continue;
+        if(x===0){img.data[i]=inp>0.5?100:15;img.data[i+1]=inp>0.5?200:15;img.data[i+2]=inp>0.5?255:30;}
+        else{img.data[i]=v?230:15;img.data[i+1]=v?230:15;img.data[i+2]=v?200:18;}
+        img.data[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function drawRCOutput(preds,targets,T,warmup,taskName){
+  const canvas=document.getElementById('rc-output-canvas');
+  const W=canvas.width,H=canvas.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#12121a';ctx.fillRect(0,0,W,H);
+  const len=T-warmup;
+  const scX=W/len;
+  ctx.font='10px sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillText('Target',8,14);
+  ctx.fillStyle='rgba(245,158,11,0.8)';ctx.fillText('Prediction',50,14);
+  for(let t=warmup;t<T;t++){
+    const x=(t-warmup)*scX;
+    const yt=H-10-(targets[t])*(H-20);
+    const yp=H-10-(preds[t])*(H-20);
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(x,yt-1,Math.max(1,scX-0.5),2);
+    ctx.fillStyle='rgba(245,158,11,0.8)';ctx.fillRect(x,yp-1,Math.max(1,scX-0.5),2);
+  }
+}
+
+function drawRCHeatmap(taskName,W,T,warmup,inputs,targets){
+  const canvas=document.getElementById('rc-heatmap');
+  const cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,cw,ch);
+  ctx.fillStyle='#12121a';ctx.fillRect(0,0,cw,ch);
+  // Sample 64 rules evenly
+  const nRules=64;
+  const accuracies=new Float64Array(256);
+  for(let ri=0;ri<nRules;ri++){
+    const r=Math.floor(ri*255/nRules);
+    const g=runReservoirWithRule(r,W,T,inputs);
+    const A=[];const b=[];
+    for(let t=warmup;t<T;t++){
+      const row=Array.from(g.slice(t*W,(t+1)*W));row.push(1);
+      A.push(row);b.push(targets[t]);
+    }
+    const ww=pseudoInverse(A,b);
+    let correct=0,total=0;
+    for(let t=warmup;t<T;t++){
+      let s=0;for(let x=0;x<W;x++)s+=g[t*W+x]*ww[x];s+=ww[W];
+      if(taskName==='narma'){correct+=Math.abs(clamp(s,0,1)-targets[t]);total++;}
+      else{if(Math.round(clamp(s,0,1))===Math.round(targets[t]))correct++;total++;}
+    }
+    const acc=taskName==='narma'?1-correct/total:correct/total;
+    // Fill a block
+    const bw=cw/nRules;
+    const [rr,gg,bb]=heatmapColor(acc);
+    ctx.fillStyle=`rgb(${Math.round(rr)},${Math.round(gg)},${Math.round(bb)})`;
+    ctx.fillRect(ri*bw,0,Math.ceil(bw),ch);
+    // x-axis label every 16
+    if(ri%16===0){
+      ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='9px sans-serif';
+      ctx.fillText(r,ri*bw,ch-2);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// MODULE 4: LENIA
+// ─────────────────────────────────────────────
+let leniaGrid=null,leniaGridBuf=null;
+let LN=128;// grid size
+let leniaRunning=false;
+let leniaAnimId=null;
+let leniaParams={R:13,mu:0.15,sigma:0.015,dt:0.10};
+let leniaKernel=null;
+let leniaStep_count=0;
+
+function leniaPreset(name){
+  const N=LN;
+  leniaGrid=new Float32Array(N*N);
+  leniaGridBuf=new Float32Array(N*N);
+  const cx=N/2,cy=N/2;
+  if(name==='orbium'){
+    leniaParams={R:13,mu:0.15,sigma:0.015,dt:0.10};
+    document.getElementById('len-R').value=13;document.getElementById('len-R-disp').textContent=13;
+    document.getElementById('len-mu').value=15;document.getElementById('len-mu-disp').textContent='0.15';
+    document.getElementById('len-sigma').value=15;document.getElementById('len-sigma-disp').textContent='0.015';
+    document.getElementById('len-dt').value=10;document.getElementById('len-dt-disp').textContent='0.10';
+    // Place a glider-like seed
+    const seed=[[0,0,0,0,1,0,0,0,0],
+                 [0,0,0,1,1,1,0,0,0],
+                 [0,0,1,1,1,1,1,0,0],
+                 [0,1,1,0,0,0,1,1,0],
+                 [1,1,0,0,0,0,0,1,1],
+                 [0,1,1,0,0,0,1,1,0],
+                 [0,0,1,1,1,1,1,0,0],
+                 [0,0,0,1,1,1,0,0,0],
+                 [0,0,0,0,1,0,0,0,0]];
+    const s=seed.length,ox=Math.floor(cx-s/2),oy=Math.floor(cy-s/2);
+    for(let y=0;y<s;y++)for(let x=0;x<s;x++)
+      leniaGrid[(oy+y)*N+(ox+x)]=seed[y][x]*0.9;
+  } else if(name==='geminium'){
+    leniaParams={R:10,mu:0.28,sigma:0.03,dt:0.15};
+    document.getElementById('len-R').value=10;document.getElementById('len-R-disp').textContent=10;
+    document.getElementById('len-mu').value=28;document.getElementById('len-mu-disp').textContent='0.28';
+    document.getElementById('len-sigma').value=30;document.getElementById('len-sigma-disp').textContent='0.030';
+    document.getElementById('len-dt').value=15;document.getElementById('len-dt-disp').textContent='0.15';
+    // Two blobs
+    for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){
+      if(dx*dx+dy*dy<=25){
+        leniaGrid[(cy+dy)*N+(cx-20+dx)]=Math.random()*0.8;
+        leniaGrid[(cy+dy)*N+(cx+20+dx)]=Math.random()*0.8;
+      }
+    }
+  } else if(name==='scutium'){
+    leniaParams={R:8,mu:0.18,sigma:0.025,dt:0.20};
+    document.getElementById('len-R').value=8;document.getElementById('len-R-disp').textContent=8;
+    document.getElementById('len-mu').value=18;document.getElementById('len-mu-disp').textContent='0.18';
+    document.getElementById('len-sigma').value=25;document.getElementById('len-sigma-disp').textContent='0.025';
+    document.getElementById('len-dt').value=20;document.getElementById('len-dt-disp').textContent='0.20';
+    for(let dy=-8;dy<=8;dy++)for(let dx=-8;dx<=8;dx++){
+      if(dx*dx+dy*dy<=64)leniaGrid[(cy+dy)*N+(cx+dx)]=0.9*(1-Math.sqrt(dx*dx+dy*dy)/8);
+    }
+  } else {
+    // Random
+    leniaParams={R:Math.floor(5+Math.random()*10),mu:0.1+Math.random()*0.3,sigma:0.01+Math.random()*0.04,dt:0.05+Math.random()*0.2};
+    document.getElementById('len-R').value=leniaParams.R;document.getElementById('len-R-disp').textContent=leniaParams.R;
+    document.getElementById('len-mu').value=Math.round(leniaParams.mu*100);document.getElementById('len-mu-disp').textContent=leniaParams.mu.toFixed(2);
+    document.getElementById('len-sigma').value=Math.round(leniaParams.sigma*1000);document.getElementById('len-sigma-disp').textContent=leniaParams.sigma.toFixed(3);
+    document.getElementById('len-dt').value=Math.round(leniaParams.dt*100);document.getElementById('len-dt-disp').textContent=leniaParams.dt.toFixed(2);
+    for(let i=0;i<N*N;i++)leniaGrid[i]=Math.random()<0.1?Math.random():0;
+  }
+  leniaKernel=buildLeniaKernel(leniaParams.R);
+  leniaStep_count=0;
+}
+
+function buildLeniaKernel(R){
+  const size=2*R+1;
+  const k=new Float32Array(size*size);
+  let sum=0;
+  for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+    const r=Math.sqrt(dx*dx+dy*dy)/R;
+    if(r>1){k[(dy+R)*size+(dx+R)]=0;continue;}
+    const v=Math.exp(4-(4/(r*(1-r)+1e-8)));// smooth bump
+    k[(dy+R)*size+(dx+R)]=v;sum+=v;
+  }
+  if(sum>0)for(let i=0;i<k.length;i++)k[i]/=sum;
+  return k;
+}
+
+function growthFunction(u,mu,sigma){
+  return 2*Math.exp(-(u-mu)*(u-mu)/(2*sigma*sigma))-1;
+}
+
+function leniaStepFn(){
+  const N=LN;
+  const R=leniaParams.R;
+  const mu=leniaParams.mu;
+  const sigma=leniaParams.sigma;
+  const dt=leniaParams.dt;
+  const ks=2*R+1;
+
+  // Direct 2D convolution
+  for(let y=0;y<N;y++){
+    for(let x=0;x<N;x++){
+      let conv=0;
+      for(let ky=0;ky<ks;ky++){
+        for(let kx=0;kx<ks;kx++){
+          const sy=((y+(ky-R)+N)%N);
+          const sx=((x+(kx-R)+N)%N);
+          conv+=leniaGrid[sy*N+sx]*leniaKernel[ky*ks+kx];
+        }
+      }
+      const g=growthFunction(conv,mu,sigma);
+      leniaGridBuf[y*N+x]=clamp(leniaGrid[y*N+x]+dt*g,0,1);
+    }
+  }
+  const tmp=leniaGrid;leniaGrid=leniaGridBuf;leniaGridBuf=tmp;
+  leniaStep_count++;
+}
+
+function leniaRender(){
+  const N=LN;
+  const canvas=document.getElementById('lenia-canvas');
+  const cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const cellW=cw/N,cellH=ch/N;
+  for(let y=0;y<N;y++){
+    for(let x=0;x<N;x++){
+      const v=leniaGrid[y*N+x];
+      const [r,g,b]=heatmapColor(v);
+      const px=Math.floor(x*cellW),py=Math.floor(y*cellH);
+      const pw=Math.max(1,Math.ceil(cellW)),ph=Math.max(1,Math.ceil(cellH));
+      for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+        const i=4*((py+dy)*cw+(px+dx));
+        if(i+3>=img.data.length)continue;
+        img.data[i]=Math.round(r);img.data[i+1]=Math.round(g);img.data[i+2]=Math.round(b);img.data[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img,0,0);
+
+  // Stats
+  let mass=0,minX=N,maxX=0,minY=N,maxY=0;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const v=leniaGrid[y*N+x];
+    mass+=v;
+    if(v>0.1){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}
+  }
+  const ent=shannonEntropy(Array.from(leniaGrid).map(v=>Math.round(v*10)));
+  document.getElementById('lenia-stats').innerHTML=
+    `<div class="metric"><span>Mass</span>${mass.toFixed(1)}</div>
+     <div class="metric"><span>Entropy</span>${ent.toFixed(2)}</div>
+     <div class="metric"><span>Bounds</span>${maxX-minX}×${maxY-minY}</div>
+     <div class="metric"><span>Steps</span>${leniaStep_count}</div>`;
+}
+
+let leniaLoopRunning=false;
+function leniaLoop(){
+  if(!leniaLoopRunning)return;
+  const speed=+document.getElementById('len-speed').value;
+  for(let i=0;i<speed;i++)leniaStepFn();
+  leniaRender();
+  leniaAnimId=requestAnimationFrame(leniaLoop);
+}
+
+function leniaStart(){
+  if(leniaLoopRunning)return;
+  leniaLoopRunning=true;
+  leniaRunning=true;
+  document.getElementById('len-play-btn').textContent='Pause';
+  leniaLoop();
+}
+
+function leniaToggle(){
+  if(leniaLoopRunning){
+    leniaLoopRunning=false;
+    document.getElementById('len-play-btn').textContent='Play';
+    if(leniaAnimId)cancelAnimationFrame(leniaAnimId);
+  } else {
+    leniaStart();
+  }
+}
+
+function leniaStep(){
+  leniaStepFn();leniaRender();
+}
+
+function leniaReset(){
+  leniaParams.R=+document.getElementById('len-R').value;
+  leniaParams.mu=+document.getElementById('len-mu').value/100;
+  leniaParams.sigma=+document.getElementById('len-sigma').value/1000;
+  leniaParams.dt=+document.getElementById('len-dt').value/100;
+  leniaKernel=buildLeniaKernel(leniaParams.R);
+  leniaPreset('orbium');
+  leniaRender();
+}
+
+function leniaParamChanged(){
+  leniaParams.mu=+document.getElementById('len-mu').value/100;
+  leniaParams.sigma=+document.getElementById('len-sigma').value/1000;
+  leniaParams.dt=+document.getElementById('len-dt').value/100;
+}
+
+// Click to add seed
+document.getElementById('lenia-canvas').addEventListener('click',e=>{
+  const canvas=e.target;
+  const rect=canvas.getBoundingClientRect();
+  const N=LN;
+  const cx=Math.floor(((e.clientX-rect.left)/rect.width)*N);
+  const cy=Math.floor(((e.clientY-rect.top)/rect.height)*N);
+  const R=5;
+  for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+    if(dx*dx+dy*dy<=R*R){
+      const nx=(cx+dx+N)%N,ny=(cy+dy+N)%N;
+      leniaGrid[ny*N+nx]=clamp(leniaGrid[ny*N+nx]+0.5,0,1);
+    }
+  }
+});
+
+// Init Lenia
+leniaGrid=new Float32Array(LN*LN);
+leniaGridBuf=new Float32Array(LN*LN);
+leniaPreset('orbium');
+
+// ─────────────────────────────────────────────
+// MODULE 5: NEURAL CA
+// ─────────────────────────────────────────────
+const NCA_SIZE=32;
+const NCA_CHANNELS=8;
+let ncaW1=null,ncaW2=null,ncaB1=null,ncaB2=null;
+let ncaState=null;
+let ncaTarget=null;
+let ncaTraining=false;
+let ncaLosses=[];
+let ncaStepCount=0;
+let ncaAnimId=null;
+
+function ncaInit(){
+  if(ncaState)return;
+  ncaReset();
+}
+
+function ncaReset(){
+  const C=NCA_CHANNELS,N=NCA_SIZE;
+  // W1: [C*3, hidden] (sobel features -> hidden), W2: [hidden, C]
+  const hidden=32;
+  ncaW1=new Float32Array(C*3*hidden);
+  ncaW2=new Float32Array(hidden*C);
+  ncaB1=new Float32Array(hidden);
+  ncaB2=new Float32Array(C);
+  // Xavier init
+  for(let i=0;i<ncaW1.length;i++)ncaW1[i]=(Math.random()*2-1)*Math.sqrt(2/(C*3+hidden));
+  for(let i=0;i<ncaW2.length;i++)ncaW2[i]=(Math.random()*2-1)*Math.sqrt(2/(hidden+C));
+  // State: [N,N,C]
+  ncaState=new Float32Array(N*N*C);
+  ncaLosses=[];ncaStepCount=0;
+  ncaSetTarget();
+  ncaRender();
+  drawNCALoss();
+  document.getElementById('nca-metrics').innerHTML='';
+}
+
+function ncaSetTarget(){
+  const N=NCA_SIZE;
+  ncaTarget=new Float32Array(N*N);
+  const name=document.getElementById('nca-target').value;
+  const cx=N/2,cy=N/2,R=N/3;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const dx=x-cx,dy=y-cy;
+    if(name==='circle')ncaTarget[y*N+x]=(dx*dx+dy*dy<R*R)?1:0;
+    else if(name==='square')ncaTarget[y*N+x]=(Math.abs(dx)<R&&Math.abs(dy)<R)?1:0;
+    else if(name==='star'){
+      const r=Math.sqrt(dx*dx+dy*dy);
+      const a=Math.atan2(dy,dx);
+      const star=0.5*(R+R*0.5*Math.cos(5*a));
+      ncaTarget[y*N+x]=r<star?1:0;
+    } else { // heart
+      const nx=dx/R,ny=dy/R;
+      const heart=(nx*nx+(ny-Math.cbrt(nx*nx))**2)<1.2?1:0;
+      ncaTarget[y*N+x]=heart;
+    }
+  }
+  drawNCATarget();
+}
+
+function drawNCATarget(){
+  const canvas=document.getElementById('nca-target-canvas');
+  const N=NCA_SIZE,cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const sc=cw/N;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const v=ncaTarget[y*N+x];
+    const px=Math.floor(x*sc),py=Math.floor(y*sc),pw=Math.ceil(sc),ph=Math.ceil(sc);
+    for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+      const i=4*((py+dy)*cw+(px+dx));
+      if(i+3>=img.data.length)continue;
+      img.data[i]=v?245:20;img.data[i+1]=v?158:20;img.data[i+2]=v?11:20;img.data[i+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function ncaRender(){
+  const canvas=document.getElementById('nca-state-canvas');
+  const N=NCA_SIZE,cw=canvas.width,ch=canvas.height;
+  const ctx=canvas.getContext('2d');
+  const img=ctx.createImageData(cw,ch);
+  const sc=cw/N;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const v=clamp(ncaState[(y*N+x)*NCA_CHANNELS],0,1);
+    const px=Math.floor(x*sc),py=Math.floor(y*sc),pw=Math.ceil(sc),ph=Math.ceil(sc);
+    for(let dy=0;dy<ph;dy++)for(let dx=0;dx<pw;dx++){
+      const i=4*((py+dy)*cw+(px+dx));
+      if(i+3>=img.data.length)continue;
+      img.data[i]=Math.round(v*59+v*(1-v)*200);
+      img.data[i+1]=Math.round(v*130);
+      img.data[i+2]=Math.round(v*246);
+      img.data[i+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function drawNCALoss(){
+  const canvas=document.getElementById('nca-loss-canvas');
+  const W=canvas.width,H=canvas.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#12121a';ctx.fillRect(0,0,W,H);
+  if(ncaLosses.length<2)return;
+  const maxL=Math.max(...ncaLosses);
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ncaLosses.forEach((l,i)=>{
+    const x=i/(ncaLosses.length-1)*(W-20)+10;
+    const y=H-10-(l/maxL)*(H-20);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px sans-serif';
+  ctx.fillText(`Loss: ${ncaLosses[ncaLosses.length-1].toFixed(4)}`,10,14);
+  ctx.fillText(`Step: ${ncaStepCount}`,10,26);
+}
+
+function ncaForward(state){
+  const N=NCA_SIZE,C=NCA_CHANNELS,hidden=32;
+  const newState=new Float32Array(N*N*C);
+  // Sobel filters
+  const Kx=[[-1,0,1],[-2,0,2],[-1,0,1]];
+  const Ky=[[-1,-2,-1],[0,0,0],[1,2,1]];
+  for(let y=0;y<N;y++){
+    for(let x=0;x<N;x++){
+      // For each channel, compute sobel
+      const features=new Float32Array(C*3);
+      for(let c=0;c<C;c++){
+        let sx=0,sy=0,sc2=state[(y*N+x)*C+c];
+        for(let ky=0;ky<3;ky++)for(let kx2=0;kx2<3;kx2++){
+          const ny2=((y+ky-1)+N)%N,nx2=((x+kx2-1)+N)%N;
+          const v=state[(ny2*N+nx2)*C+c];
+          sx+=Kx[ky][kx2]*v;sy+=Ky[ky][kx2]*v;
+        }
+        features[c*3]=sc2;features[c*3+1]=sx/8;features[c*3+2]=sy/8;
+      }
+      // hidden = relu(W1 @ features + b1)
+      const h=new Float32Array(hidden);
+      for(let hi=0;hi<hidden;hi++){
+        let s=ncaB1[hi];
+        for(let fi=0;fi<C*3;fi++)s+=ncaW1[hi*C*3+fi]*features[fi];
+        h[hi]=Math.max(0,s);
+      }
+      // out = W2 @ h + b2
+      for(let ci=0;ci<C;ci++){
+        let s=ncaB2[ci];
+        for(let hi=0;hi<hidden;hi++)s+=ncaW2[ci*hidden+hi]*h[hi];
+        newState[(y*N+x)*C+ci]=state[(y*N+x)*C+ci]+s*0.1;
+      }
+    }
+  }
+  // Clip
+  for(let i=0;i<newState.length;i++)newState[i]=clamp(newState[i],0,1);
+  return newState;
+}
+
+function ncaLoss(state){
+  const N=NCA_SIZE;
+  let loss=0;
+  for(let i=0;i<N*N;i++){
+    const diff=state[i*NCA_CHANNELS]-ncaTarget[i];
+    loss+=diff*diff;
+  }
+  return loss/(N*N);
+}
+
+function ncaTrainStep(){
+  const lr=+document.getElementById('nca-lr').value/10000;
+  // Evolve for 8 steps
+  let state=new Float32Array(ncaState);
+  const states=[state];
+  for(let s=0;s<8;s++){state=ncaForward(state);states.push(new Float32Array(state));}
+  const loss=ncaLoss(state);
+  ncaLosses.push(loss);
+  if(ncaLosses.length>300)ncaLosses.shift();
+
+  // Finite difference gradient (simplified — perturb W and measure loss change)
+  const eps=1e-3;
+  // Only update a random subset for speed
+  const subsetSize=30;
+  // W2 gradient
+  for(let i=0;i<subsetSize;i++){
+    const idx=Math.floor(Math.random()*ncaW2.length);
+    ncaW2[idx]+=eps;
+    let state2=new Float32Array(ncaState);
+    for(let s=0;s<8;s++)state2=ncaForward(state2);
+    const loss2=ncaLoss(state2);
+    ncaW2[idx]-=eps;
+    ncaW2[idx]-=lr*(loss2-loss)/eps;
+  }
+  // W1 gradient
+  for(let i=0;i<subsetSize;i++){
+    const idx=Math.floor(Math.random()*ncaW1.length);
+    ncaW1[idx]+=eps;
+    let state2=new Float32Array(ncaState);
+    for(let s=0;s<8;s++)state2=ncaForward(state2);
+    const loss2=ncaLoss(state2);
+    ncaW1[idx]-=eps;
+    ncaW1[idx]-=lr*(loss2-loss)/eps;
+  }
+
+  ncaState=state;
+  ncaStepCount++;
+}
+
+function ncaTrainLoop(){
+  if(!ncaTraining)return;
+  for(let i=0;i<3;i++)ncaTrainStep();
+  ncaRender();drawNCALoss();
+  document.getElementById('nca-metrics').innerHTML=
+    `<div class="metric"><span>Loss</span>${ncaLosses[ncaLosses.length-1]?.toFixed(4)??'—'}</div>
+     <div class="metric"><span>Steps</span>${ncaStepCount}</div>`;
+  ncaAnimId=requestAnimationFrame(ncaTrainLoop);
+}
+
+function ncaTrain(){
+  if(!ncaTraining){
+    ncaTraining=true;
+    document.getElementById('nca-train-btn').classList.add('active-btn');
+    ncaTrainLoop();
+  }
+}
+function ncaStop(){
+  ncaTraining=false;
+  document.getElementById('nca-train-btn').classList.remove('active-btn');
+  if(ncaAnimId)cancelAnimationFrame(ncaAnimId);
+}
+function ncaDamage(){
+  const N=NCA_SIZE,C=NCA_CHANNELS;
+  const cx=N/2,cy=N/2,R=N/6;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if((x-cx)*(x-cx)+(y-cy)*(y-cy)<R*R){
+      for(let c=0;c<C;c++)ncaState[(y*N+x)*C+c]=0;
+    }
+  }
+  ncaRender();
+}
+
+// ─────────────────────────────────────────────
+// MODULE 6: CRITICALITY DASHBOARD
+// ─────────────────────────────────────────────
+function genSystemData(source){
+  const W=200,S=400;
+  let grid;
+  if(source.startsWith('rule')){
+    const rule=+source.replace('rule','');
+    grid=new Uint8Array(W*S);
+    for(let i=0;i<W;i++)grid[i]=Math.random()<0.5?1:0;
+    for(let t=1;t<S;t++){
+      const off=(t-1)*W,noff=t*W;
+      for(let x=0;x<W;x++){
+        const l=grid[off+(x-1+W)%W],c=grid[off+x],r=grid[off+(x+1)%W];
+        const idx=(l<<2)|(c<<1)|r;
+        grid[noff+x]=(rule>>idx)&1;
+      }
+    }
+    return Array.from(grid);
+  } else if(source==='random'){
+    grid=new Uint8Array(W*S);
+    for(let i=0;i<W*S;i++)grid[i]=Math.random()<0.5?1:0;
+    return Array.from(grid);
+  } else {
+    grid=new Uint8Array(W*S);
+    for(let i=0;i<W*S;i++)grid[i]=0;
+    return Array.from(grid);
+  }
+}
+
+function computeLyapunov(data,W,S){
+  // Hamming distance between two nearby ICs over time
+  const divergences=[];
+  for(let trial=0;trial<5;trial++){
+    const ic=new Uint8Array(W);for(let i=0;i<W;i++)ic[i]=Math.random()<0.5?1:0;
+    const ic2=new Uint8Array(ic);
+    ic2[Math.floor(Math.random()*W)]^=1;// flip one bit
+    const rule=110;
+    const g1=new Uint8Array(W*100),g2=new Uint8Array(W*100);
+    for(let i=0;i<W;i++){g1[i]=ic[i];g2[i]=ic2[i];}
+    for(let t=1;t<100;t++){
+      const off=(t-1)*W,noff=t*W;
+      for(let x=0;x<W;x++){
+        const l=g1[off+(x-1+W)%W],c=g1[off+x],r=g1[off+(x+1)%W];
+        g1[noff+x]=(rule>>(( l<<2)|(c<<1)|r))&1;
+        const l2=g2[off+(x-1+W)%W],c2=g2[off+x],r2=g2[off+(x+1)%W];
+        g2[noff+x]=(rule>>((l2<<2)|(c2<<1)|r2))&1;
+      }
+      let d=0;for(let x=0;x<W;x++)if(g1[t*W+x]!==g2[t*W+x])d++;
+      divergences.push(d/W);
+    }
+  }
+  return divergences;
+}
+
+function computeLyapunovForSource(source){
+  const W=100;
+  const rule=source.startsWith('rule')?+source.replace('rule',''):source==='random'?30:0;
+  const ic=new Uint8Array(W);for(let i=0;i<W;i++)ic[i]=Math.random()<0.5?1:0;
+  const ic2=new Uint8Array(ic);ic2[Math.floor(Math.random()*W)]^=1;
+  const S=80;
+  const g1=new Uint8Array(W*S),g2=new Uint8Array(W*S);
+  for(let i=0;i<W;i++){g1[i]=ic[i];g2[i]=ic2[i];}
+  const divs=[];
+  for(let t=1;t<S;t++){
+    const off=(t-1)*W,noff=t*W;
+    if(source==='random'){
+      for(let x=0;x<W;x++){g1[noff+x]=Math.random()<0.5?1:0;g2[noff+x]=Math.random()<0.5?1:0;}
+    } else if(source==='ordered'){
+      for(let x=0;x<W;x++){g1[noff+x]=0;g2[noff+x]=0;}
+    } else {
+      for(let x=0;x<W;x++){
+        const l=g1[off+(x-1+W)%W],c=g1[off+x],r=g1[off+(x+1)%W];
+        g1[noff+x]=(rule>>((l<<2)|(c<<1)|r))&1;
+        const l2=g2[off+(x-1+W)%W],c2=g2[off+x],r2=g2[off+(x+1)%W];
+        g2[noff+x]=(rule>>((l2<<2)|(c2<<1)|r2))&1;
+      }
+    }
+    let d=0;for(let x=0;x<W;x++)if(g1[t*W+x]!==g2[t*W+x])d++;
+    divs.push(d/W);
+  }
+  return divs;
+}
+
+function computeDFA(series){
+  // Detrended Fluctuation Analysis
+  const N=series.length;
+  const cumsum=new Float64Array(N);
+  const mean=series.reduce((a,v)=>a+v,0)/N;
+  cumsum[0]=series[0]-mean;
+  for(let i=1;i<N;i++)cumsum[i]=cumsum[i-1]+(series[i]-mean);
+
+  const scales=[8,12,16,24,32,48,64];
+  const Fns=[];
+  for(const s of scales){
+    let F2=0,cnt=0;
+    for(let start=0;start+s<=N;start+=s){
+      const seg=Array.from(cumsum.slice(start,start+s));
+      // Linear detrend
+      const xs=seg.map((_,i)=>i);
+      const xm=xs.reduce((a,v)=>a+v,0)/s;
+      const ym=seg.reduce((a,v)=>a+v,0)/s;
+      let num=0,den=0;
+      for(let i=0;i<s;i++){num+=(i-xm)*(seg[i]-ym);den+=(i-xm)*(i-xm);}
+      const slope=den>0?num/den:0;
+      const intercept=ym-slope*xm;
+      let mse=0;
+      for(let i=0;i<s;i++)mse+=(seg[i]-(slope*i+intercept))**2;
+      F2+=mse/s;cnt++;
+    }
+    Fns.push(Math.sqrt(F2/cnt));
+  }
+  // Log-log slope
+  const logS=scales.map(s=>Math.log(s));
+  const logF=Fns.map(f=>Math.log(f+1e-10));
+  const lsm=logS.reduce((a,v)=>a+v,0)/logS.length;
+  const lfm=logF.reduce((a,v)=>a+v,0)/logF.length;
+  let num=0,den=0;
+  for(let i=0;i<logS.length;i++){num+=(logS[i]-lsm)*(logF[i]-lfm);den+=(logS[i]-lsm)**2;}
+  return{alpha:den>0?num/den:0,scales,Fns};
+}
+
+function setGauge(id,pos){
+  document.getElementById(id).style.left=clamp(pos,0,1)*100+'%';
+}
+
+function critAnalyze(){
+  const source=document.getElementById('crit-source').value;
+  const data=genSystemData(source);
+  const W=200,S=Math.floor(data.length/W);
+
+  // 1. Lyapunov
+  const divs=computeLyapunovForSource(source);
+  const finalDiv=divs[divs.length-1]||0;
+  const lyapExp=finalDiv>0.5?0.3:finalDiv>0.1?0.0:-0.3;
+  drawMiniLine(document.getElementById('crit-lyap-canvas'),divs,'#ef4444');
+  setGauge('lyap-thumb',(lyapExp+0.5));
+  document.getElementById('lyap-val').textContent=`λ_max ≈ ${lyapExp.toFixed(2)} — ${lyapExp>0.1?'chaotic':lyapExp>-0.05?'critical':'ordered'}`;
+
+  // 2. Shannon entropy
+  const lastRows=data.slice((S-50)*W);
+  const ent=shannonEntropy(lastRows);
+  const entropyRate=ent;
+  const entArr=[];
+  for(let t=S-50;t<S;t++)entArr.push(shannonEntropy(Array.from(data).slice(t*W,(t+1)*W)));
+  drawMiniLine(document.getElementById('crit-ent-canvas'),entArr,'#a78bfa');
+  setGauge('ent-thumb',entropyRate/1.0);
+  document.getElementById('ent-val').textContent=`H = ${entropyRate.toFixed(3)} bits — ${entropyRate<0.3?'ordered':entropyRate>0.85?'chaotic':'complex'}`;
+
+  // 3. Mutual information
+  const miVals=[];
+  for(let d2=1;d2<=20;d2++){
+    let mi2=0;
+    for(let trial2=0;trial2<3;trial2++){
+      const t=Math.floor(S/2)+trial2*10;
+      const a=data[t*W+0],b=data[t*W+d2];
+      mi2+=a===b?0.1:0;// simplified
+    }
+    // Better: compute across all timesteps
+    const co2={'0,0':0,'0,1':0,'1,0':0,'1,1':0};
+    for(let t=0;t<S;t++){
+      const a=data[t*W+0],b=data[t*W+Math.min(d2,W-1)];
+      co2[a+','+b]++;
+    }
+    const tot=S;let mi3=0;
+    for(const k in co2){
+      if(co2[k]===0)continue;
+      const[a,b]=k.split(',');
+      const pAB=co2[k]/tot;
+      let pA=0,pB=0;
+      for(const k2 in co2){const[a2,b2]=k2.split(',');if(a2===a)pA+=co2[k2]/tot;if(b2===b)pB+=co2[k2]/tot;}
+      if(pA>0&&pB>0)mi3+=pAB*Math.log2(pAB/(pA*pB));
+    }
+    miVals.push(Math.max(0,mi3));
+  }
+  drawMiniLine(document.getElementById('crit-mi-canvas'),miVals,'#f59e0b');
+  const peakMI=Math.max(...miVals);
+  setGauge('mi-thumb',clamp(peakMI/0.5,0,1));
+  document.getElementById('mi-val').textContent=`Peak MI = ${peakMI.toFixed(3)} bits at lag ${miVals.indexOf(peakMI)+1}`;
+
+  // 4. Avalanche distribution
+  const avalSizes=[];
+  for(let trial=0;trial<30;trial++){
+    const g=new Uint8Array(W);
+    for(let i=0;i<W;i++)g[i]=data[Math.floor(S/2)*W+i];
+    const rule=source.startsWith('rule')?+source.replace('rule',''):source==='random'?30:0;
+    g[Math.floor(Math.random()*W)]^=1;
+    const g2=new Uint8Array(W);
+    for(let i=0;i<W;i++)g2[i]=data[Math.floor(S/2)*W+i];
+    let aval=0;
+    for(let t=0;t<20;t++){
+      const n1=new Uint8Array(W),n2=new Uint8Array(W);
+      for(let x=0;x<W;x++){
+        const l=g[(x-1+W)%W],c=g[x],r=g[(x+1)%W];
+        n1[x]=source==='random'?(Math.random()<0.5?1:0):source==='ordered'?0:(rule>>((l<<2)|(c<<1)|r))&1;
+        const l2=g2[(x-1+W)%W],c2=g2[x],r2=g2[(x+1)%W];
+        n2[x]=source==='random'?(Math.random()<0.5?1:0):source==='ordered'?0:(rule>>((l2<<2)|(c2<<1)|r2))&1;
+      }
+      let diff=0;for(let x=0;x<W;x++)if(n1[x]!==n2[x])diff++;
+      if(diff===0)break;
+      aval+=diff;
+      for(let x=0;x<W;x++){g[x]=n1[x];g2[x]=n2[x];}
+    }
+    if(aval>0)avalSizes.push(aval);
+  }
+  // Log-log avalanche plot
+  const aCanvas=document.getElementById('crit-aval-canvas');
+  const aCtx=aCanvas.getContext('2d');
+  const aW=aCanvas.width,aH=aCanvas.height;
+  aCtx.clearRect(0,0,aW,aH);aCtx.fillStyle='#12121a';aCtx.fillRect(0,0,aW,aH);
+  if(avalSizes.length>2){
+    const maxS=Math.max(...avalSizes);
+    const bins=new Array(10).fill(0);
+    for(const s of avalSizes)bins[Math.min(9,Math.floor(s/maxS*9))]++;
+    const maxB=Math.max(...bins);
+    aCtx.strokeStyle='#f59e0b';aCtx.lineWidth=2;aCtx.beginPath();
+    bins.forEach((b,i)=>{
+      const x=15+i*(aW-30)/9;
+      const y=aH-10-(b/maxB)*(aH-20);
+      i===0?aCtx.moveTo(x,y):aCtx.lineTo(x,y);
+    });
+    aCtx.stroke();
+    // Fit power law
+    const logSizes=avalSizes.map(s=>Math.log(s));
+    const logCounts={};for(const s of avalSizes)logCounts[Math.floor(Math.log(s))]=(logCounts[Math.floor(Math.log(s))]||0)+1;
+    const xs2=Object.keys(logCounts).map(Number).sort((a,b)=>a-b);
+    const ys2=xs2.map(x=>Math.log(logCounts[x]));
+    const xm2=xs2.reduce((a,v)=>a+v,0)/xs2.length;
+    const ym2=ys2.reduce((a,v)=>a+v,0)/ys2.length;
+    let num2=0,den2=0;
+    for(let i=0;i<xs2.length;i++){num2+=(xs2[i]-xm2)*(ys2[i]-ym2);den2+=(xs2[i]-xm2)**2;}
+    const slope=den2>0?num2/den2:-1.5;
+    document.getElementById('aval-val').textContent=`Power-law slope ≈ ${slope.toFixed(2)} (critical ≈ -1.5)`;
+  }
+
+  // 5. DFA
+  const timeSeries=[];
+  for(let t=0;t<S;t++){let s=0;for(let x=0;x<W;x++)s+=data[t*W+x];timeSeries.push(s/W);}
+  const{alpha,scales,Fns}=computeDFA(timeSeries);
+  const dfaCanvas=document.getElementById('crit-dfa-canvas');
+  const dfaCtx=dfaCanvas.getContext('2d');
+  const dfaW=dfaCanvas.width,dfaH=dfaCanvas.height;
+  dfaCtx.clearRect(0,0,dfaW,dfaH);dfaCtx.fillStyle='#12121a';dfaCtx.fillRect(0,0,dfaW,dfaH);
+  const logSc=scales.map(s=>Math.log10(s));
+  const logFn=Fns.map(f=>Math.log10(f+1e-10));
+  const xMin=Math.min(...logSc),xMax=Math.max(...logSc);
+  const yMin=Math.min(...logFn),yMax=Math.max(...logFn);
+  const toX=(v)=>20+(v-xMin)/(xMax-xMin)*(dfaW-40);
+  const toY=(v)=>dfaH-15-(v-yMin)/(yMax-yMin+0.01)*(dfaH-30);
+  dfaCtx.strokeStyle='rgba(255,255,255,0.2)';dfaCtx.lineWidth=1;
+  dfaCtx.beginPath();dfaCtx.moveTo(20,dfaH-15);dfaCtx.lineTo(dfaW-20,dfaH-15);dfaCtx.stroke();
+  dfaCtx.beginPath();dfaCtx.moveTo(20,10);dfaCtx.lineTo(20,dfaH-15);dfaCtx.stroke();
+  dfaCtx.strokeStyle='#3b82f6';dfaCtx.lineWidth=2;dfaCtx.beginPath();
+  logSc.forEach((x,i)=>i===0?dfaCtx.moveTo(toX(x),toY(logFn[i])):dfaCtx.lineTo(toX(x),toY(logFn[i])));
+  dfaCtx.stroke();
+  dfaCtx.fillStyle='rgba(255,255,255,0.5)';dfaCtx.font='10px sans-serif';
+  dfaCtx.fillText(`log n`,dfaW/2,dfaH-2);
+  dfaCtx.fillText('log F(n)',24,14);
+  document.getElementById('dfa-val').textContent=`α = ${alpha.toFixed(3)} — ${alpha<0.7?'random-like':alpha>1.3?'ordered/persistent':'critical (1/f noise)'}`;
+
+  // Verdict
+  let verdict='';let vclass='';
+  if(source==='ordered'||source==='rule0'){verdict='This system is ORDERED — frozen dynamics, no computation.';vclass='order';}
+  else if(source==='rule4'){verdict='This system is ORDERED/PERIODIC — class II, repetitive patterns.';vclass='order';}
+  else if(source==='rule110'||source==='rule54'){verdict='This system is CRITICAL — edge of chaos, maximum computational capacity!';vclass='critical';}
+  else if(source==='rule30'||source==='rule90'||source==='random'){verdict='This system is CHAOTIC — high entropy, poor computation despite complexity.';vclass='chaos';}
+  else{verdict='Analysis complete.';vclass='critical';}
+  document.getElementById('crit-verdict').textContent=verdict;
+  document.getElementById('crit-verdict').className='verdict '+vclass;
+}
+
+function drawMiniLine(canvas,data,color){
+  const W=canvas.width,H=canvas.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#12121a';ctx.fillRect(0,0,W,H);
+  if(!data.length)return;
+  const mx=Math.max(...data)||1,mn=Math.min(...data);
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x=i/(data.length-1||1)*(W-4)+2;
+    const y=H-4-(v-mn)/(mx-mn+1e-10)*(H-8);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+// ─── Init ───
+setRule(110);
+</script>
+</body>
+</html>
